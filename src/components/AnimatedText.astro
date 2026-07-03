@@ -1,0 +1,190 @@
+---
+interface Props {
+  as?: 'h1' | 'h2' | 'h3' | 'p' | 'span' | 'div';
+  variant?: 'heading' | 'body';
+  delay?: number;
+  class?: string;
+}
+
+const {
+  as: Tag = 'p',
+  variant = 'body',
+  delay = 0,
+  class: className = ''
+} = Astro.props;
+---
+<Tag
+  class:list={['animated-text', `variant-${variant}`, className]}
+  data-delay={delay}
+>
+  <slot />
+</Tag>
+
+<script>
+  // Split text into words, measure line positions, wrap each line in a
+  // mask-clipped container, and reveal on IntersectionObserver enter (once).
+
+  type Variant = 'heading' | 'body';
+
+  const REDUCED = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+
+  function splitWords(el: HTMLElement) {
+    const text = el.textContent ?? '';
+    el.textContent = '';
+    const parts = text.split(/(\s+)/);
+    for (const part of parts) {
+      if (!part) continue;
+      if (/^\s+$/.test(part)) {
+        el.appendChild(document.createTextNode(part));
+      } else {
+        const span = document.createElement('span');
+        span.className = 'aw';
+        span.textContent = part;
+        el.appendChild(span);
+      }
+    }
+  }
+
+  function groupIntoLines(el: HTMLElement): HTMLSpanElement[][] {
+    const words = el.querySelectorAll<HTMLSpanElement>('span.aw');
+    const lines: HTMLSpanElement[][] = [];
+    let currentTop: number | null = null;
+    for (const word of words) {
+      const top = Math.round(word.getBoundingClientRect().top);
+      if (currentTop === null || Math.abs(top - currentTop) > 2) {
+        lines.push([word]);
+        currentTop = top;
+      } else {
+        lines[lines.length - 1].push(word);
+      }
+    }
+    return lines;
+  }
+
+  function wrapLines(el: HTMLElement, lines: HTMLSpanElement[][]) {
+    el.textContent = '';
+    lines.forEach((words, i) => {
+      const line = document.createElement('span');
+      line.className = 'aw-line';
+      line.style.setProperty('--i', String(i));
+      const inner = document.createElement('span');
+      inner.className = 'aw-line-inner';
+      words.forEach((w, j) => {
+        inner.appendChild(w);
+        if (j < words.length - 1) inner.appendChild(document.createTextNode(' '));
+      });
+      line.appendChild(inner);
+      el.appendChild(line);
+    });
+  }
+
+  function prepare(el: HTMLElement) {
+    if (REDUCED) {
+      el.classList.add('is-visible');
+      return;
+    }
+    splitWords(el);
+    const lines = groupIntoLines(el);
+    wrapLines(el, lines);
+  }
+
+  function observe(el: HTMLElement) {
+    if (REDUCED) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            el.classList.add('is-visible');
+            io.unobserve(entry.target);
+          }
+        }
+      },
+      { threshold: 0.15 }
+    );
+    io.observe(el);
+  }
+
+  function init() {
+    const nodes = document.querySelectorAll<HTMLElement>('.animated-text:not([data-ready])');
+    nodes.forEach((el) => {
+      el.dataset.ready = '1';
+      prepare(el);
+      observe(el);
+    });
+  }
+
+  if (document.fonts?.ready) {
+    // Wait for webfonts before measuring line breaks — fallback → real font
+    // shifts word widths and would otherwise regroup lines mid-reveal.
+    document.fonts.ready.then(() => init());
+  } else {
+    init();
+  }
+</script>
+
+<style is:global>
+  .animated-text {
+    /* Neutralize default margins so callers control spacing. */
+    margin: 0;
+  }
+
+  .animated-text .aw-line {
+    display: block;
+  }
+
+  .animated-text.variant-heading .aw-line {
+    overflow: hidden;
+    padding-bottom: 0.02em; /* prevents descenders from clipping */
+  }
+
+  .animated-text .aw-line-inner {
+    display: block;
+    will-change: transform, opacity;
+  }
+
+  /* Heading: mask-clipped translateY reveal. */
+  .animated-text.variant-heading .aw-line-inner {
+    transform: translateY(115%);
+    transition: transform 900ms cubic-bezier(0.16, 1, 0.3, 1);
+    transition-delay: calc(var(--i) * 80ms + var(--aw-delay, 0ms));
+  }
+  .animated-text.variant-heading.is-visible .aw-line-inner {
+    transform: translateY(0);
+  }
+
+  /* Body: lighter fade + slight rise. */
+  .animated-text.variant-body .aw-line-inner {
+    opacity: 0;
+    transform: translateY(20px);
+    transition:
+      transform 700ms cubic-bezier(0.16, 1, 0.3, 1),
+      opacity 700ms cubic-bezier(0.16, 1, 0.3, 1);
+    transition-delay: calc(var(--i) * 60ms + var(--aw-delay, 0ms));
+  }
+  .animated-text.variant-body.is-visible .aw-line-inner {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* Apply --aw-delay from data-delay via inline style; see Astro block below. */
+  .animated-text[data-delay] {
+    --aw-delay: 0ms;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .animated-text .aw-line-inner {
+      transform: none !important;
+      opacity: 1 !important;
+      transition: none !important;
+    }
+  }
+</style>
+
+<script define:vars={{}}>
+  // Reflect data-delay onto a CSS custom prop so it can be added to
+  // transition-delay. Runs once at load.
+  for (const el of document.querySelectorAll('.animated-text[data-delay]')) {
+    const d = parseInt((el as HTMLElement).dataset.delay || '0', 10);
+    if (d) (el as HTMLElement).style.setProperty('--aw-delay', d + 'ms');
+  }
+</script>

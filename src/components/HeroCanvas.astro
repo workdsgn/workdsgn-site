@@ -1,0 +1,282 @@
+---
+interface Props {
+  preset?: string;
+  mouseStrength?: number;
+  mouseEase?: number;
+  disableMouse?: boolean;
+}
+const {
+  preset = 'ambient',
+  mouseStrength,
+  mouseEase,
+  disableMouse = false
+} = Astro.props as Props;
+---
+<canvas
+  id="shader"
+  aria-hidden="true"
+  data-preset={preset}
+  data-mouse-strength={mouseStrength ?? ''}
+  data-mouse-ease={mouseEase ?? ''}
+  data-disable-mouse={disableMouse ? '1' : ''}
+></canvas>
+
+<div id="shader-panel" data-debug>
+  <button id="shader-panel-hide" aria-label="Hide controls">&times;</button>
+  <h1>CONCENTRIC / CHROMATIC</h1>
+
+  <div class="row"><label>rings</label><input type="range" data-k="rings" min="2" max="30" step="0.1" value="14"><span class="v" data-v="rings">14.0</span></div>
+  <div class="row"><label>sharpness</label><input type="range" data-k="sharp" min="0.3" max="6" step="0.05" value="1.8"><span class="v" data-v="sharp">1.80</span></div>
+  <div class="row"><label>aspect</label><input type="range" data-k="aspect" min="0.4" max="1.6" step="0.01" value="0.78"><span class="v" data-v="aspect">0.78</span></div>
+  <div class="row"><label>pulse spd</label><input type="range" data-k="speed" min="0" max="1.5" step="0.01" value="0.25"><span class="v" data-v="speed">0.25</span></div>
+  <div class="row"><label>pulse dpth</label><input type="range" data-k="pulse" min="0" max="1" step="0.01" value="0.35"><span class="v" data-v="pulse">0.35</span></div>
+  <div class="row"><label>grain amt</label><input type="range" data-k="grain" min="0" max="1.2" step="0.01" value="0.75"><span class="v" data-v="grain">0.75</span></div>
+  <div class="row"><label>grain scale</label><input type="range" data-k="gscale" min="200" max="2500" step="10" value="1200"><span class="v" data-v="gscale">1200</span></div>
+  <div class="row"><label>grain flicker</label><input type="range" data-k="flick" min="0" max="30" step="0.5" value="12"><span class="v" data-v="flick">12.0</span></div>
+  <div class="row"><label>chromatic</label><input type="range" data-k="chrom" min="0" max="0.06" step="0.0005" value="0.018"><span class="v" data-v="chrom">0.018</span></div>
+  <div class="row"><label>edge fringe</label><input type="range" data-k="edge" min="0" max="1.5" step="0.01" value="0.7"><span class="v" data-v="edge">0.70</span></div>
+  <div class="row"><label>envelope</label><input type="range" data-k="env" min="0" max="1" step="0.01" value="0.55"><span class="v" data-v="env">0.55</span></div>
+  <div class="row"><label>nucleus</label><input type="range" data-k="nuc" min="0" max="1.5" step="0.01" value="0.35"><span class="v" data-v="nuc">0.35</span></div>
+  <div class="row"><label>brightness</label><input type="range" data-k="bright" min="0.5" max="2.5" step="0.01" value="1.35"><span class="v" data-v="bright">1.35</span></div>
+  <div class="row"><label>wobble</label><input type="range" data-k="wob" min="0" max="0.2" step="0.001" value="0.02"><span class="v" data-v="wob">0.020</span></div>
+
+  <div class="btns">
+    <button data-preset="ambient">AMBIENT</button>
+    <button data-preset="recede">RECEDE</button>
+    <button data-preset="trace">TRACE</button>
+    <button data-preset="rings">RINGS</button>
+    <button data-preset="converge">CONVERGE</button>
+    <button data-preset="plate">PLATE</button>
+    <button data-preset="nucleus">NUCLEUS</button>
+  </div>
+</div>
+
+<button id="shader-panel-show" type="button">CONTROLS</button>
+
+<script>
+  import { mountShader } from '../lib/shader.js';
+  import { shaderPresets } from '../lib/shaderConfig.js';
+
+  const canvas = document.getElementById('shader') as HTMLCanvasElement | null;
+  if (!canvas) throw new Error('shader canvas missing');
+
+  const initialPreset = canvas.dataset.preset ?? 'ambient';
+  const shader = mountShader(canvas, shaderPresets[initialPreset] ?? {});
+  // Debug hook: expose the controller for verification via eval.
+  // TODO: remove before ship.
+  (window as any).__shader = shader;
+
+  if (!shader) {
+    document.body.insertAdjacentHTML(
+      'afterbegin',
+      '<div style="color:#888;padding:40px;font-family:monospace;position:fixed;top:0;left:0;z-index:100;">WebGL not available in this browser.</div>'
+    );
+  } else {
+    // Prop overrides (take precedence over preset, before URL).
+    const strengthProp = canvas.dataset.mouseStrength;
+    const easeProp = canvas.dataset.mouseEase;
+    if (strengthProp) shader.params.mouseStrength = parseFloat(strengthProp);
+    if (easeProp) shader.params.mouseEase = parseFloat(easeProp);
+
+    // URL param override: ?rings=7.4&sharp=0.85&... — tune live in production.
+    // TODO: gate behind ?debug=1 or strip before ship.
+    const url = new URL(window.location.href);
+    for (const [k, v] of url.searchParams) {
+      if (k in shader.params) {
+        const n = parseFloat(v);
+        if (!Number.isNaN(n)) (shader.params as any)[k] = n;
+      }
+    }
+
+    // Input source: pointer on fine-pointer devices, autonomous drift on
+    // touch or when disableMouse is set.
+    const disableMouse = canvas.dataset.disableMouse === '1';
+    const coarsePointer = window.matchMedia?.('(pointer: coarse)').matches;
+    const useDrift = disableMouse || coarsePointer;
+
+    if (useDrift) {
+      const t0 = performance.now();
+      const drift = () => {
+        const t = (performance.now() - t0) / 1000;
+        shader.setMouseTarget(
+          Math.sin(t * 0.13) * 0.8,
+          Math.cos(t * 0.17) * 0.55
+        );
+        requestAnimationFrame(drift);
+      };
+      drift();
+    } else {
+      const toShaderCoords = (clientX: number, clientY: number) => {
+        const rect = canvas.getBoundingClientRect();
+        const minDim = Math.min(rect.width, rect.height);
+        const x = ((clientX - rect.left) - rect.width / 2) / minDim * 2;
+        // Flip Y: gl_FragCoord origin is bottom-left, clientY is top-left.
+        const y = -(((clientY - rect.top) - rect.height / 2) / minDim * 2);
+        shader.setMouseTarget(x, y);
+      };
+      window.addEventListener('pointermove', (e) => toShaderCoords(e.clientX, e.clientY), { passive: true });
+    }
+
+    const fmt = (k: string, v: number) => {
+      if (k === 'gscale' || k === 'flick') return v.toFixed(0);
+      if (k === 'chrom' || k === 'wob') return v.toFixed(3);
+      return v.toFixed(2);
+    };
+
+    const syncUI = () => {
+      document.querySelectorAll<HTMLInputElement>('#shader-panel input[data-k]').forEach((el) => {
+        const k = el.dataset.k!;
+        el.value = String((shader.params as any)[k]);
+        const v = document.querySelector<HTMLElement>(`#shader-panel [data-v="${k}"]`);
+        if (v) v.textContent = fmt(k, (shader.params as any)[k]);
+      });
+    };
+
+    syncUI();
+
+    document.querySelectorAll<HTMLInputElement>('#shader-panel input[data-k]').forEach((el) => {
+      el.addEventListener('input', () => {
+        const k = el.dataset.k!;
+        (shader.params as any)[k] = parseFloat(el.value);
+        const v = document.querySelector<HTMLElement>(`#shader-panel [data-v="${k}"]`);
+        if (v) v.textContent = fmt(k, (shader.params as any)[k]);
+      });
+    });
+
+    document.querySelectorAll<HTMLButtonElement>('#shader-panel [data-preset]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        shader.applyPreset(shaderPresets[btn.dataset.preset!]);
+        syncUI();
+      });
+    });
+
+    // scrollDriver dispatches this when the dominant section flips.
+    // Pause the loop while services is dominant — canvas is invisible there,
+    // no point burning GPU cycles.
+    window.addEventListener('dominantchange', (e) => {
+      const dominant = (e as CustomEvent).detail?.dominant;
+      if (dominant === 'services') shader.pause();
+      else shader.resume();
+    });
+
+    const panel = document.getElementById('shader-panel')!;
+    const show = document.getElementById('shader-panel-show')!;
+    document.getElementById('shader-panel-hide')!.addEventListener('click', () => {
+      panel.style.display = 'none';
+      show.style.display = 'block';
+    });
+    show.addEventListener('click', () => {
+      panel.style.display = 'block';
+      show.style.display = 'none';
+    });
+  }
+</script>
+
+<style>
+  #shader {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    display: block;
+    z-index: var(--shader-z, 1);
+    pointer-events: none;
+    mix-blend-mode: var(--shader-blend, normal);
+    opacity: var(--shader-opacity, 1);
+    transition: opacity 200ms linear;
+  }
+
+  #shader-panel {
+    position: fixed;
+    top: 12px;
+    left: 12px;
+    z-index: 30;
+    display: none;
+    background: rgba(0, 0, 0, 0.72);
+    backdrop-filter: blur(8px);
+    padding: 14px 16px;
+    border: 1px solid #222;
+    border-radius: 4px;
+    font-size: 11px;
+    letter-spacing: 0.02em;
+    width: 240px;
+    color: #888;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  }
+  #shader-panel h1 {
+    font-size: 10px;
+    margin: 0 0 10px 0;
+    color: #ccc;
+    letter-spacing: 0.15em;
+    font-weight: 500;
+  }
+  #shader-panel .row {
+    display: flex;
+    align-items: center;
+    margin: 5px 0;
+  }
+  #shader-panel .row label {
+    flex: 0 0 90px;
+    color: #888;
+  }
+  #shader-panel .row input[type="range"] {
+    flex: 1;
+    margin: 0 8px;
+    accent-color: #666;
+  }
+  #shader-panel .row .v {
+    flex: 0 0 42px;
+    text-align: right;
+    color: #ddd;
+    font-variant-numeric: tabular-nums;
+  }
+  #shader-panel .btns {
+    display: flex;
+    gap: 4px;
+    margin-top: 10px;
+  }
+  #shader-panel .btns button {
+    flex: 1;
+    background: #111;
+    color: #aaa;
+    border: 1px solid #333;
+    padding: 5px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+  }
+  #shader-panel .btns button:hover {
+    background: #1a1a1a;
+    color: #fff;
+  }
+  #shader-panel-hide {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: none;
+    color: #666;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  #shader-panel-show {
+    position: fixed;
+    bottom: 12px;
+    right: 12px;
+    z-index: 30;
+    display: block;
+    background: rgba(0, 0, 0, 0.55);
+    color: #ccc;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    padding: 6px 12px;
+    cursor: pointer;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    border-radius: 4px;
+    opacity: 0.5;
+    transition: opacity 200ms ease-out;
+  }
+  #shader-panel-show:hover { opacity: 1; }
+</style>

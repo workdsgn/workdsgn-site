@@ -1,0 +1,56 @@
+---
+import HeroCanvas from '../components/HeroCanvas.astro';
+import Nav from '../components/Nav.astro';
+import SectionHero from '../components/SectionHero.astro';
+import SectionServices from '../components/SectionServices.astro';
+import SectionCta from '../components/SectionCta.astro';
+import '../styles/global.css';
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>WORK_DSGN</title>
+    <meta name="description" content="Strategic brand systems, creative direction, and operational design." />
+    <link rel="preconnect" href="https://use.typekit.net" crossorigin />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preload" as="image" href="/gauntlet-cursor.png" />
+    <link rel="stylesheet" href="https://use.typekit.net/yxy6qpv.css" />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600&display=swap"
+    />
+  </head>
+  <body>
+    <div class="global-bg" aria-hidden="true"></div>
+    <HeroCanvas preset="ambient_hero" />
+    <div class="crosshair" aria-hidden="true">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <line x1="12" y1="0" x2="12" y2="24" stroke="currentColor" stroke-width="1"/>
+        <line x1="0" y1="12" x2="24" y2="12" stroke="currentColor" stroke-width="1"/>
+        <circle cx="12" cy="12" r="7" fill="none" stroke="currentColor" stroke-width="1"/>
+      </svg>
+    </div>
+    <div class="coords" aria-hidden="true">0,000<br>000</div>
+    <div class="gauntlet-cursor" aria-hidden="true">
+      <img src="/gauntlet-cursor.png" alt="" />
+    </div>
+    <Nav />
+    <main>
+      <SectionHero />
+      <SectionServices />
+      <SectionCta />
+    </main>
+
+    <script>
+      import { initScrollDriver } from '../lib/scrollDriver.js';
+      import { initContentReveal } from '../lib/contentReveal.js';
+      import { initCrosshair } from '../lib/crosshair.js';
+      initScrollDriver();
+      initContentReveal();
+      initCrosshair();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,90 @@
+---
+// Sticky top nav. Colors invert per section via --fg / --bg, which the
+// section observer promotes onto :root. Transitions match the section-bg
+// crossfade (900ms) so nothing snaps out of sync.
+---
+<nav class="nav" aria-label="Primary">
+  <a class="nav-brand" href="/">WORK_DSGN</a>
+  <div class="nav-right">
+    <a class="nav-cta" href="mailto:studio@workdsgn.com">Start a project</a>
+  </div>
+</nav>
+
+<style is:global>
+  .nav {
+    position: fixed;
+    top: clamp(16px, 2.4vh, 32px);
+    left: 0;
+    right: 0;
+    padding: 0 var(--gutter);
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: clamp(24px, 4vw, 64px);
+    /* Container is a hit-through layer; children re-enable pointer events. */
+    pointer-events: none;
+  }
+  .nav > *,
+  .nav .nav-right > * { pointer-events: auto; }
+
+  .nav-brand {
+    /* Cofo Sans Medium — softer/less technical than the mono treatment
+       used for the smaller labels. */
+    font-family: "cofo-sans", "Inter Tight", system-ui, sans-serif;
+    font-weight: 500;
+    font-size: 14px;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: var(--fg);
+    text-decoration: none;
+    transition:
+      color 900ms cubic-bezier(0.16, 1, 0.3, 1),
+      opacity 200ms ease-out;
+  }
+  .nav-brand:hover { opacity: 0.6; }
+
+  .nav-link {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    color: var(--fg);
+    text-decoration: none;
+    transition:
+      color 900ms cubic-bezier(0.16, 1, 0.3, 1),
+      opacity 200ms ease-out;
+  }
+  .nav-link:hover { opacity: 0.6; }
+
+  .nav-right {
+    display: flex;
+    align-items: center;
+    gap: clamp(16px, 3vw, 40px);
+  }
+
+  .nav-cta {
+    display: inline-block;
+    padding: 11px 20px;
+    border-radius: 999px;
+    background: var(--fg);
+    color: var(--bg);
+    text-decoration: none;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    transition:
+      background 900ms cubic-bezier(0.16, 1, 0.3, 1),
+      color 900ms cubic-bezier(0.16, 1, 0.3, 1),
+      transform 200ms ease-out,
+      opacity 200ms ease-out;
+  }
+  .nav-cta:hover {
+    transform: translateY(-1px);
+    opacity: 0.9;
+  }
+
+  @media (max-width: 640px) {
+    .nav-link { display: none; }
+  }
+</style>

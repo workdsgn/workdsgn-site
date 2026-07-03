@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Concentric / Chromatic Shader</title>
+<link rel="stylesheet" href="https://use.typekit.net/yxy6qpv.css">
+<style>
+  html, body { margin: 0; padding: 0; background: #000; overflow: hidden; font-family: ui-monospace, "SF Mono", Menlo, monospace; color: #888; height: 100%; }
+  canvas { display: block; width: 100vw; height: 100vh; cursor: none; }
+  #crosshair {
+    position: fixed; z-index: 15; pointer-events: none;
+    top: 0; left: 0;
+    width: 24px; height: 24px;
+    transform: translate(-50%, -50%);
+    will-change: transform;
+    mix-blend-mode: difference;
+    opacity: 0;
+    transition: opacity 300ms;
+  }
+  #crosshair svg { display: block; width: 100%; height: 100%; }
+  #crosshair.visible { opacity: 1; }
+  #coords {
+    position: fixed; z-index: 15; pointer-events: none;
+    top: 0; left: 0;
+    transform: translate(-100%, 0);
+    padding-right: 3px; padding-top: 1px;
+    font-family: "cofo-mono", ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 8px;
+    color: #fff;
+    mix-blend-mode: difference;
+    letter-spacing: 0.02em;
+    line-height: 1.1;
+    text-align: right;
+    opacity: 0;
+    transition: opacity 300ms;
+    white-space: nowrap;
+  }
+  #coords.visible { opacity: 1; }
+  #panel {
+    position: fixed; top: 12px; left: 12px; z-index: 10;
+    background: rgba(0,0,0,0.72); backdrop-filter: blur(8px);
+    padding: 14px 16px; border: 1px solid #222; border-radius: 4px;
+    font-size: 11px; letter-spacing: 0.02em; width: 240px;
+  }
+  #panel h1 { font-size: 10px; margin: 0 0 10px 0; color: #ccc; letter-spacing: 0.15em; font-weight: 500; }
+  .row { display: flex; align-items: center; margin: 5px 0; }
+  .row label { flex: 0 0 90px; color: #888; }
+  .row input[type="range"] { flex: 1; margin: 0 8px; accent-color: #666; }
+  .row .v { flex: 0 0 42px; text-align: right; color: #ddd; font-variant-numeric: tabular-nums; }
+  .btns { display: flex; gap: 4px; margin-top: 10px; }
+  .btns button { flex: 1; background: #111; color: #aaa; border: 1px solid #333; padding: 5px; cursor: pointer; font-family: inherit; font-size: 10px; letter-spacing: 0.08em; }
+  .btns button:hover { background: #1a1a1a; color: #fff; }
+  #hide { position: absolute; top: 10px; right: 10px; background: none; color: #666; border: none; cursor: pointer; font-size: 14px; }
+  #show { position: fixed; top: 12px; left: 12px; z-index: 11; display: none; background: #111; color: #888; border: 1px solid #333; padding: 6px 12px; cursor: pointer; font-family: inherit; font-size: 10px; letter-spacing: 0.1em; }
+  #hint { position: fixed; bottom: 16px; right: 16px; z-index: 10; color: #555; font-size: 10px; letter-spacing: 0.12em; pointer-events: none; transition: opacity 0.6s; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+
+<div id="panel">
+  <button id="hide">×</button>
+  <h1>CONCENTRIC / CHROMATIC</h1>
+
+  <div class="row"><label>rings</label><input type="range" id="rings" min="2" max="30" step="0.1" value="14"><span class="v" id="rings-v">14.0</span></div>
+  <div class="row"><label>sharpness</label><input type="range" id="sharp" min="0.3" max="6" step="0.05" value="1.8"><span class="v" id="sharp-v">1.80</span></div>
+  <div class="row"><label>aspect</label><input type="range" id="aspect" min="0.4" max="1.6" step="0.01" value="0.78"><span class="v" id="aspect-v">0.78</span></div>
+  <div class="row"><label>pulse spd</label><input type="range" id="speed" min="0" max="1.5" step="0.01" value="0.25"><span class="v" id="speed-v">0.25</span></div>
+  <div class="row"><label>pulse dpth</label><input type="range" id="pulse" min="0" max="1" step="0.01" value="0.35"><span class="v" id="pulse-v">0.35</span></div>
+  <div class="row"><label>grain amt</label><input type="range" id="grain" min="0" max="1.2" step="0.01" value="0.75"><span class="v" id="grain-v">0.75</span></div>
+  <div class="row"><label>grain scale</label><input type="range" id="gscale" min="200" max="2500" step="10" value="1200"><span class="v" id="gscale-v">1200</span></div>
+  <div class="row"><label>grain flicker</label><input type="range" id="flick" min="0" max="30" step="0.5" value="12"><span class="v" id="flick-v">12.0</span></div>
+  <div class="row"><label>chromatic</label><input type="range" id="chrom" min="0" max="0.06" step="0.0005" value="0.018"><span class="v" id="chrom-v">0.018</span></div>
+  <div class="row"><label>edge fringe</label><input type="range" id="edge" min="0" max="1.5" step="0.01" value="0.7"><span class="v" id="edge-v">0.70</span></div>
+  <div class="row"><label>envelope</label><input type="range" id="env" min="0" max="1" step="0.01" value="0.55"><span class="v" id="env-v">0.55</span></div>
+  <div class="row"><label>nucleus</label><input type="range" id="nuc" min="0" max="1.5" step="0.01" value="0.35"><span class="v" id="nuc-v">0.35</span></div>
+  <div class="row"><label>brightness</label><input type="range" id="bright" min="0.5" max="2.5" step="0.01" value="1.35"><span class="v" id="bright-v">1.35</span></div>
+  <div class="row"><label>wobble</label><input type="range" id="wob" min="0" max="0.2" step="0.001" value="0.02"><span class="v" id="wob-v">0.020</span></div>
+  <div class="row"><label>mouse</label><input type="range" id="mouse" min="0" max="1.5" step="0.01" value="0.6"><span class="v" id="mouse-v">0.60</span></div>
+  <div class="row"><label>mouse ease</label><input type="range" id="ease" min="0.01" max="0.4" step="0.01" value="0.08"><span class="v" id="ease-v">0.08</span></div>
+
+  <div class="btns">
+    <button data-preset="rings">RINGS</button>
+    <button data-preset="converge">CONVERGE</button>
+    <button data-preset="plate">PLATE</button>
+    <button data-preset="nucleus">NUCLEUS</button>
+  </div>
+  <div class="btns" style="margin-top:6px;">
+    <button data-preset="ambient" style="flex:1;">AMBIENT</button>
+    <button data-preset="hero" style="flex:1;">HERO</button>
+    <button id="copylink" style="flex:1;">COPY LINK</button>
+  </div>
+</div>
+
+<button id="show">CONTROLS</button>
+<div id="hint">MOVE CURSOR</div>
+
+<div id="crosshair" aria-hidden="true">
+  <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+    <line x1="12" y1="0" x2="12" y2="24" stroke="currentColor" stroke-width="1"/>
+    <line x1="0" y1="12" x2="24" y2="12" stroke="currentColor" stroke-width="1"/>
+    <circle cx="12" cy="12" r="7" fill="none" stroke="currentColor" stroke-width="1"/>
+  </svg>
+</div>
+<div id="coords" aria-hidden="true">0,000<br>000</div>
+
+<script>
+const canvas = document.getElementById('c');
+const gl = canvas.getContext('webgl', { antialias: true, preserveDrawingBuffer: false });
+
+if (!gl) {
+  document.body.innerHTML = '<div style="color:#888;padding:40px;font-family:monospace;">WebGL not available in this browser.</div>';
+}
+
+const vs = `
+attribute vec2 p;
+void main(){ gl_Position = vec4(p, 0.0, 1.0); }
+`;
+
+const fs = `
+precision highp float;
+uniform vec2 uRes;
+uniform float uTime;
+uniform float uRings, uSharp, uAspect, uSpeed, uPulse;
+uniform float uGrain, uGscale, uFlick;
+uniform float uChrom, uEdge;
+uniform float uEnv, uNuc, uBright, uWob;
+uniform vec2 uMouse;
+uniform float uMouseStrength;
+
+float hash(vec2 p){
+  p = fract(p * vec2(234.34, 435.345));
+  p += dot(p, p + 34.23);
+  return fract(p.x * p.y);
+}
+
+float ringField(vec2 uv, vec2 center, float phase){
+  vec2 p = uv - center;
+  p.x *= uAspect;
+  // wobble subtly
+  p.x += sin(uTime * 0.7) * uWob;
+  p.y += cos(uTime * 0.5) * uWob;
+  float d = length(p);
+  float t = uTime * uSpeed;
+  float mod_d = d * (1.0 + sin(t * 2.0) * uPulse * 0.08);
+  float r = sin(mod_d * uRings * 3.14159 - t * 2.0 + phase);
+  r = pow(abs(r), 1.0 / max(uSharp, 0.01));
+  // envelope: fade at very edge and very center
+  float envelope = smoothstep(0.02, 0.12, d) * smoothstep(1.15, 0.35, d);
+  envelope = mix(1.0, envelope, uEnv);
+  // bright nucleus
+  float nucleus = smoothstep(0.14, 0.0, d) * uNuc;
+  return r * envelope + nucleus;
+}
+
+// Two ring systems interfering: additive with strength control.
+// Secondary ring gets a phase offset so at rest (mouse at 0,0) the two systems
+// don't perfectly overlap into a single amplified ring — they interfere visibly.
+float combined(vec2 uv, float phase){
+  float primary = ringField(uv, vec2(0.0), phase);
+  if (uMouseStrength < 0.001) return primary;
+  float secondary = ringField(uv, uMouse, phase + 0.7);
+  return primary + secondary * uMouseStrength;
+}
+
+// Particulate: threshold noise against ring field so grain clusters on bright nodes
+float particulate(vec2 uv, float ringVal, float channelSeed){
+  float g = hash(floor(uv * uGscale) + floor(uTime * uFlick) + channelSeed);
+  float threshold = 1.0 - clamp(ringVal, 0.0, 1.0) * 0.95;
+  float particle = smoothstep(threshold - 0.06, threshold + 0.02, g);
+  return mix(ringVal, particle * 1.2, uGrain);
+}
+
+void main(){
+  vec2 uv = (gl_FragCoord.xy - uRes.xy * 0.5) / min(uRes.x, uRes.y);
+  uv *= 2.0;
+
+  float rDist = length(uv);
+  float aberration = uChrom * (0.3 + rDist * uEdge * 3.5);
+  vec2 dir = uv / (rDist + 0.0001);
+
+  float rRing = combined(uv - dir * aberration, 0.0);
+  float gRing = combined(uv, 0.0);
+  float bRing = combined(uv + dir * aberration, 0.0);
+
+  float r = particulate(uv - dir * aberration, rRing, 1.3);
+  float g = particulate(uv, gRing, 7.1);
+  float b = particulate(uv + dir * aberration, bRing, 13.7);
+
+  vec3 col = vec3(r, g, b);
+
+  // Monochrome core, chromatic push at edges
+  float mono = (r + g + b) / 3.0;
+  float chromaMask = smoothstep(0.15, 1.1, rDist) * uEdge;
+  col = mix(vec3(mono), col, clamp(chromaMask, 0.0, 1.0));
+
+  col *= uBright;
+  col = clamp(col, 0.0, 1.8);
+
+  gl_FragColor = vec4(col, 1.0);
+}
+`;
+
+function compile(src, type){
+  const s = gl.createShader(type);
+  gl.shaderSource(s, src);
+  gl.compileShader(s);
+  if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)){
+    console.error('SHADER ERROR:', gl.getShaderInfoLog(s));
+    console.error(src);
+  }
+  return s;
+}
+
+const prog = gl.createProgram();
+gl.attachShader(prog, compile(vs, gl.VERTEX_SHADER));
+gl.attachShader(prog, compile(fs, gl.FRAGMENT_SHADER));
+gl.linkProgram(prog);
+gl.useProgram(prog);
+
+const buf = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
+const loc = gl.getAttribLocation(prog, 'p');
+gl.enableVertexAttribArray(loc);
+gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+
+const uniformNames = ['uRes','uTime','uRings','uSharp','uAspect','uSpeed','uPulse','uGrain','uGscale','uFlick','uChrom','uEdge','uEnv','uNuc','uBright','uWob','uMouse','uMouseStrength'];
+const U = {};
+uniformNames.forEach(n => U[n] = gl.getUniformLocation(prog, n));
+
+const params = {
+  rings: 14, sharp: 1.8, aspect: 0.78,
+  speed: 0.25, pulse: 0.35,
+  grain: 0.75, gscale: 1200, flick: 12,
+  chrom: 0.018, edge: 0.7,
+  env: 0.55, nuc: 0.35, bright: 1.35, wob: 0.02,
+  mouse: 0.6, ease: 0.08
+};
+
+const paramKeys = Object.keys(params);
+
+function fmt(k, v){
+  if (['gscale','flick'].includes(k)) return v.toFixed(0);
+  if (['chrom','wob'].includes(k)) return v.toFixed(3);
+  return v.toFixed(2);
+}
+
+function syncUI(){
+  paramKeys.forEach(k => {
+    const el = document.getElementById(k);
+    const val = document.getElementById(k + '-v');
+    if (el) el.value = params[k];
+    if (val) val.textContent = fmt(k, params[k]);
+  });
+}
+
+paramKeys.forEach(k => {
+  const el = document.getElementById(k);
+  const val = document.getElementById(k + '-v');
+  if (!el) return;
+  el.addEventListener('input', () => {
+    params[k] = parseFloat(el.value);
+    val.textContent = fmt(k, params[k]);
+  });
+});
+
+const presets = {
+  rings:    { rings: 14, sharp: 1.8, aspect: 0.78, speed: 0.25, pulse: 0.35, grain: 0.75, gscale: 1200, flick: 12, chrom: 0.018, edge: 0.7,  env: 0.55, nuc: 0.35, bright: 1.35, wob: 0.02,  mouse: 0.6,  ease: 0.08 },
+  converge: { rings: 8,  sharp: 3.0, aspect: 0.95, speed: 0.45, pulse: 0.7,  grain: 0.6,  gscale: 1400, flick: 8,  chrom: 0.032, edge: 0.9,  env: 0.65, nuc: 0.6,  bright: 1.45, wob: 0.04,  mouse: 0.95, ease: 0.06 },
+  plate:    { rings: 22, sharp: 1.2, aspect: 0.7,  speed: 0.12, pulse: 0.15, grain: 0.95, gscale: 900,  flick: 20, chrom: 0.012, edge: 0.4,  env: 0.35, nuc: 0.15, bright: 1.2,  wob: 0.008, mouse: 0.35, ease: 0.05 },
+  nucleus:  { rings: 10, sharp: 2.5, aspect: 0.9,  speed: 0.35, pulse: 0.5,  grain: 0.5,  gscale: 1600, flick: 6,  chrom: 0.025, edge: 0.8,  env: 0.75, nuc: 1.0,  bright: 1.6,  wob: 0.015, mouse: 0.7,  ease: 0.08 },
+  ambient:  { rings: 7.4, sharp: 0.85, aspect: 0.40, speed: 1.38, pulse: 0.99, grain: 0.35, gscale: 1150, flick: 1,  chrom: 0.044, edge: 0.18, env: 0.87, nuc: 0.0,  bright: 0.64, wob: 0.113, mouse: 0.78, ease: 0.04 },
+  hero:     { rings: 7.4, sharp: 0.85, aspect: 0.40, speed: 1.38, pulse: 1.00, grain: 0.14, gscale: 450,  flick: 13, chrom: 0.020, edge: 0.45, env: 0.87, nuc: 0.0,  bright: 0.42, wob: 0.113, mouse: 0.78, ease: 0.04 }
+};
+
+document.querySelectorAll('[data-preset]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    Object.assign(params, presets[btn.dataset.preset]);
+    syncUI();
+  });
+});
+
+// Load params from URL on startup
+(function loadFromURL(){
+  const url = new URL(window.location.href);
+  let loaded = false;
+  for (const [k, v] of url.searchParams) {
+    if (k in params) {
+      const n = parseFloat(v);
+      if (!isNaN(n)) { params[k] = n; loaded = true; }
+    }
+  }
+  if (loaded) syncUI();
+})();
+
+// Copy shareable link with current settings baked in
+document.getElementById('copylink').addEventListener('click', () => {
+  const url = new URL(window.location.href);
+  url.search = '';
+  paramKeys.forEach(k => url.searchParams.set(k, params[k]));
+  navigator.clipboard.writeText(url.toString()).then(() => {
+    const btn = document.getElementById('copylink');
+    const orig = btn.textContent;
+    btn.textContent = 'COPIED';
+    setTimeout(() => btn.textContent = orig, 1200);
+  });
+});
+
+document.getElementById('hide').addEventListener('click', () => {
+  document.getElementById('panel').style.display = 'none';
+  document.getElementById('show').style.display = 'block';
+});
+document.getElementById('show').addEventListener('click', () => {
+  document.getElementById('panel').style.display = 'block';
+  document.getElementById('show').style.display = 'none';
+});
+
+// ---- Mouse tracking: eased second ring center ----
+const mouseTarget = { x: 0.5, y: 0.3 };
+const mouseCurrent = { x: 0.5, y: 0.3 };
+const hasFinePointer = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+const hint = document.getElementById('hint');
+const crosshair = document.getElementById('crosshair');
+const coords = document.getElementById('coords');
+let hintFaded = false;
+let lastClientX = 0, lastClientY = 0;
+
+function formatCoord(n) {
+  const s = Math.abs(Math.round(n)).toString();
+  const sign = n < 0 ? '-' : '';
+  // Add comma for thousands
+  if (s.length > 3) {
+    return sign + s.slice(0, -3) + ',' + s.slice(-3);
+  }
+  return sign + s.padStart(3, '0');
+}
+
+function updateCrosshair(x, y) {
+  crosshair.style.transform = `translate(${x}px, ${y}px) translate(-50%, -50%)`;
+  // Coords sit tight against the bottom-left of the crosshair reticle
+  coords.style.transform = `translate(${x - 10}px, ${y + 10}px) translate(-100%, 0)`;
+  coords.innerHTML = `${formatCoord(x)}<br>${formatCoord(y)}`;
+}
+
+function updateMouseTarget(clientX, clientY){
+  lastClientX = clientX;
+  lastClientY = clientY;
+  const rect = canvas.getBoundingClientRect();
+  const minDim = Math.min(rect.width, rect.height);
+  // Match shader's uv space: origin at center, y-up, min-dim = 2 units
+  mouseTarget.x = ((clientX - rect.left) - rect.width / 2) / minDim * 2;
+  mouseTarget.y = -((clientY - rect.top) - rect.height / 2) / minDim * 2;
+  updateCrosshair(clientX, clientY);
+  if (!hintFaded) {
+    hint.style.opacity = '0';
+    crosshair.classList.add('visible');
+    coords.classList.add('visible');
+    hintFaded = true;
+  }
+}
+
+if (hasFinePointer) {
+  window.addEventListener('pointermove', e => updateMouseTarget(e.clientX, e.clientY));
+  // Hide crosshair when leaving window, restore on re-enter
+  window.addEventListener('pointerleave', () => {
+    crosshair.classList.remove('visible');
+    coords.classList.remove('visible');
+  });
+  window.addEventListener('pointerenter', () => {
+    if (hintFaded) {
+      crosshair.classList.add('visible');
+      coords.classList.add('visible');
+    }
+  });
+} else {
+  hint.style.display = 'none';
+  crosshair.style.display = 'none';
+  coords.style.display = 'none';
+}
+// ---------------------------------------------------
+
+function resize(){
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  canvas.width = Math.floor(window.innerWidth * dpr);
+  canvas.height = Math.floor(window.innerHeight * dpr);
+  gl.viewport(0, 0, canvas.width, canvas.height);
+}
+resize();
+window.addEventListener('resize', resize);
+
+const t0 = performance.now();
+function loop(){
+  const t = (performance.now() - t0) / 1000;
+
+  // Touch/no-pointer devices: autonomous slow drift
+  if (!hasFinePointer) {
+    mouseTarget.x = Math.sin(t * 0.31) * 0.7;
+    mouseTarget.y = Math.cos(t * 0.23) * 0.5;
+  }
+
+  // Ease current toward target
+  mouseCurrent.x += (mouseTarget.x - mouseCurrent.x) * params.ease;
+  mouseCurrent.y += (mouseTarget.y - mouseCurrent.y) * params.ease;
+
+  gl.uniform2f(U.uRes, canvas.width, canvas.height);
+  gl.uniform1f(U.uTime, t);
+  gl.uniform1f(U.uRings, params.rings);
+  gl.uniform1f(U.uSharp, params.sharp);
+  gl.uniform1f(U.uAspect, params.aspect);
+  gl.uniform1f(U.uSpeed, params.speed);
+  gl.uniform1f(U.uPulse, params.pulse);
+  gl.uniform1f(U.uGrain, params.grain);
+  gl.uniform1f(U.uGscale, params.gscale);
+  gl.uniform1f(U.uFlick, params.flick);
+  gl.uniform1f(U.uChrom, params.chrom);
+  gl.uniform1f(U.uEdge, params.edge);
+  gl.uniform1f(U.uEnv, params.env);
+  gl.uniform1f(U.uNuc, params.nuc);
+  gl.uniform1f(U.uBright, params.bright);
+  gl.uniform1f(U.uWob, params.wob);
+  gl.uniform2f(U.uMouse, mouseCurrent.x, mouseCurrent.y);
+  gl.uniform1f(U.uMouseStrength, params.mouse);
+  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  requestAnimationFrame(loop);
+}
+loop();
+</script>
+</body>
+</html>

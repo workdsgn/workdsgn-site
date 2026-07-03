@@ -1,0 +1,105 @@
+---
+---
+<section class="section section-cta">
+  <div class="section-wordmark" aria-hidden="true">WORK_DSGN</div>
+  <div class="section-content">
+    <div class="cta-copy">
+      <h2 class="cta-h2 fade-in">
+        The right problem changes everything.
+      </h2>
+      <p class="cta-body fade-in" style="transition-delay: 80ms">
+        Some projects need design. Others need alignment, clarity, and a system
+        that can scale.
+      </p>
+    </div>
+    <a class="cta-email fade-in" style="transition-delay: 160ms" href="mailto:studio@workdsgn.com">studio@workdsgn.com</a>
+  </div>
+</section>
+
+<style is:global>
+  .section-cta {
+    position: relative;
+    min-height: 100vh;
+    height: 100vh;
+    color: var(--fg);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    /* NO overflow: hidden — wordmark bleeds past the viewport bottom via
+       `bottom: -0.12em` and needs to be visible. */
+  }
+
+  .section-cta > .section-wordmark {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -0.12em;
+    z-index: 1;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(15vw, 20vw, 30vw);
+    line-height: 0.9;
+    letter-spacing: -0.045em;
+    color: #090909;
+    text-align: center;
+    white-space: nowrap;
+    pointer-events: none;
+    user-select: none;
+  }
+
+  .section-cta > .section-content {
+    position: relative;
+    z-index: 3;
+    padding: 0 var(--gutter);
+    /* flex-end on the parent pushes us to the bottom; margin here creates
+       the actual gap above the wordmark. Padding here doesn't work — flex-end
+       measures to the border box, not the padding box. */
+    margin-bottom: 22vh;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: var(--gutter);
+  }
+
+  .cta-copy {
+    max-width: 640px;
+  }
+
+  .cta-h2 {
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: clamp(26px, 2.4vw, 40px);
+    line-height: 1.08;
+    letter-spacing: -0.02em;
+    margin: 0;
+  }
+
+  .cta-body {
+    margin: clamp(14px, 1.4vw, 22px) 0 0 0;
+    font-family: var(--font-body);
+    font-size: clamp(14px, 0.95vw, 16px);
+    line-height: 1.5;
+    color: color-mix(in oklab, var(--fg) 78%, transparent);
+    max-width: 420px;
+  }
+
+  .cta-email {
+    color: var(--fg);
+    text-decoration: underline;
+    text-underline-offset: 4px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    transition: opacity 200ms ease-out;
+  }
+  .cta-email:hover { opacity: 0.75; }
+
+  @media (max-width: 900px) {
+    .section-cta > .section-content {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 16px;
+    }
+  }
+</style>
