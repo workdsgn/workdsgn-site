@@ -19,8 +19,13 @@
 <style is:global>
   .section-cta {
     position: relative;
+    /* dvh accounts for iOS Safari's dynamic viewport (URL bar collapse).
+       Height is intentionally NOT fixed at 100vh — the earlier `height: 100vh`
+       trapped mobile scroll at the bottom because 100vh > the visible area
+       once the URL bar hid. */
     min-height: 100vh;
-    height: 100vh;
+    min-height: 100dvh;
+    height: auto;
     color: var(--fg);
     display: flex;
     flex-direction: column;
@@ -37,9 +42,9 @@
     z-index: 1;
     font-family: var(--font-display);
     font-weight: 700;
-    font-size: clamp(15vw, 20vw, 30vw);
+    font-size: clamp(15vw, 22vw, 28vw);
     line-height: 0.9;
-    letter-spacing: -0.045em;
+    letter-spacing: -0.03em;
     color: #090909;
     text-align: center;
     white-space: nowrap;
@@ -51,10 +56,10 @@
     position: relative;
     z-index: 3;
     padding: 0 var(--gutter);
-    /* flex-end on the parent pushes us to the bottom; margin here creates
-       the actual gap above the wordmark. Padding here doesn't work — flex-end
-       measures to the border box, not the padding box. */
-    margin-bottom: 22vh;
+    /* Gap above the wordmark. Wordmark height scales with viewport WIDTH,
+       so the gap has to as well — `28vw` preferred, bounded by vh so it
+       doesn't collapse on ultra-tall or vanish on ultra-wide viewports. */
+    margin-bottom: clamp(22vh, 28vw, 40vh);
     display: flex;
     justify-content: space-between;
     align-items: baseline;
@@ -100,6 +105,16 @@
       flex-direction: column;
       align-items: flex-start;
       gap: 16px;
+    }
+  }
+
+  @media (max-width: 768px) {
+    /* Force the wordmark to fit portrait viewports. 100vw/5.5 caps by
+       average glyph width so 9 chars (WORK_DSGN) fit without horizontal
+       clip even when the fallback font is slightly wider than Cofo Sans. */
+    .section-cta > .section-wordmark {
+      font-size: min(22vw, calc(100vw / 6));
+      letter-spacing: -0.04em;
     }
   }
 </style>

@@ -60,6 +60,16 @@ const {
   const canvas = document.getElementById('shader') as HTMLCanvasElement | null;
   if (!canvas) throw new Error('shader canvas missing');
 
+  // Debug-panel unlock: hidden by default (see CSS) so the CONTROLS chip
+  // doesn't leak to real visitors. Show it when ?debug=1 is set, or
+  // automatically in dev.
+  const debugRequested =
+    new URLSearchParams(window.location.search).has('debug') || import.meta.env.DEV;
+  if (debugRequested) {
+    const show = document.getElementById('shader-panel-show');
+    if (show) show.style.display = 'block';
+  }
+
   const initialPreset = canvas.dataset.preset ?? 'ambient';
   const shader = mountShader(canvas, shaderPresets[initialPreset] ?? {});
   // Debug hook: expose the controller for verification via eval.
@@ -265,7 +275,9 @@ const {
     bottom: 12px;
     right: 12px;
     z-index: 30;
-    display: block;
+    /* Hidden by default in production. Unlocked at runtime by the debug
+       block below when ?debug=1 is present, or automatically in dev. */
+    display: none;
     background: rgba(0, 0, 0, 0.55);
     color: #ccc;
     border: 1px solid rgba(255, 255, 255, 0.15);
