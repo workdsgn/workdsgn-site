@@ -1,73 +1,97 @@
 ---
 ---
 <section class="section section-cta">
-  <div class="section-wordmark" aria-hidden="true">WORK_DSGN</div>
-  <div class="section-content">
+  <div class="section-content cta-content">
     <div class="cta-copy">
-      <h2 class="cta-h2 fade-in">
-        The right problem changes everything.
-      </h2>
-      <p class="cta-body fade-in" style="transition-delay: 80ms">
-        Some projects need design. Others need alignment, clarity, and a system
-        that can scale.
-      </p>
+      <h2 class="cta-h2">The right problem<br />changes everything.</h2>
+      <p class="cta-body" data-scramble>Some projects need design. Others need alignment,<br />clarity, and a system that can scale.</p>
     </div>
-    <a class="cta-email fade-in" style="transition-delay: 160ms" href="mailto:studio@workdsgn.com">studio@workdsgn.com</a>
+    <a class="cta-email fade-in" style="transition-delay: 160ms" href="mailto:studio@workdsgn.com" data-scramble>studio@workdsgn.com</a>
   </div>
+  <footer class="site-footer">
+    <div class="section-wordmark footer-wordmark" aria-hidden="true">WORK_DSGN</div>
+    <div class="footer-meta">
+      <div class="footer-meta-cell">
+        <span id="ny-clock" data-scramble>EST / MIA LOADING...</span>
+      </div>
+      <div class="footer-meta-cell" data-scramble>© 2026 WORK DESIGN LLC</div>
+      <div class="footer-meta-cell" data-scramble>STUDIO BASED IN CENTRAL FLORIDA</div>
+      <div class="footer-meta-cell footer-meta-cell--right" data-scramble>SERVICING CLIENTS WORLDWIDE</div>
+    </div>
+  </footer>
 </section>
+
+<script>
+  import { renderScrambleText } from '../lib/textScramble.js';
+
+  // Live NY-timezone clock — military time. Runs once immediately so the
+  // "LOADING..." fallback flashes for at most one paint, then ticks every 1s.
+  // If per-char scramble spans have already been installed (init runs after
+  // fonts.ready), keep re-rendering as spans so the effect survives every
+  // tick; before that, plain text is fine.
+  function updateNYClock() {
+    const now = new Date();
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/New_York',
+      weekday: 'long',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    }).formatToParts(now);
+    const day = parts.find(p => p.type === 'weekday').value.toUpperCase();
+    const hour = parts.find(p => p.type === 'hour').value;
+    const minute = parts.find(p => p.type === 'minute').value;
+    const second = parts.find(p => p.type === 'second').value;
+    const el = document.getElementById('ny-clock');
+    if (!el) return;
+    const text = `EST / MIA ${day} ${hour}:${minute}:${second}`;
+    if (el.dataset.scrambleReady === '1') {
+      renderScrambleText(el, text);
+    } else {
+      el.textContent = text;
+    }
+  }
+  updateNYClock();
+  setInterval(updateNYClock, 1000);
+</script>
 
 <style is:global>
   .section-cta {
     position: relative;
     /* dvh accounts for iOS Safari's dynamic viewport (URL bar collapse).
-       Height is intentionally NOT fixed at 100vh — the earlier `height: 100vh`
-       trapped mobile scroll at the bottom because 100vh > the visible area
-       once the URL bar hid. */
+       height: auto — never lock a fixed 100vh here or scroll traps at the
+       bottom the moment the URL bar hides. */
     min-height: 100vh;
-    min-height: 100svh;
+    min-height: 100dvh;
     height: auto;
     color: var(--fg);
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
-    /* NO overflow: hidden — wordmark bleeds past the viewport bottom via
-       `bottom: -0.12em` and needs to be visible. */
-  }
-
-  .section-cta > .section-wordmark {
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: -0.12em;
-    z-index: 1;
-    font-family: var(--font-display);
-    font-weight: 700;
-    /* min() cap prevents "WORK_DSGN" (9 chars) from overflowing viewport
-       width. Divisor 6 accommodates the Inter Tight fallback (wider glyphs
-       than Cofo Sans Bold) — the 22vw preferred only wins on ultra-narrow
-       viewports; normally 100vw/6 dominates so the wordmark fits every width. */
-    font-size: min(clamp(15vw, 22vw, 28vw), calc(100vw / 6));
-    line-height: 0.9;
-    letter-spacing: -0.03em;
-    color: #090909;
-    text-align: center;
-    white-space: nowrap;
-    pointer-events: none;
-    user-select: none;
   }
 
   .section-cta > .section-content {
     position: relative;
     z-index: 3;
-    padding: 0 var(--gutter);
-    /* Gap above the wordmark. Wordmark height scales with viewport WIDTH,
-       so the gap has to as well — `28vw` preferred, bounded by vh so it
-       doesn't collapse on ultra-tall or vanish on ultra-wide viewports. */
-    margin-bottom: clamp(22vh, 28vw, 40vh);
+    padding: 0 clamp(24px, 4vw, 80px);
+    /* Pulled the CTA copy CLOSER to the wordmark so the two read as one
+       "call to action" block rather than floating separately in the page.
+       Was clamp(22vh, 28vw, 40vh) — cut roughly in half. */
+    margin-bottom: clamp(10vh, 12vw, 20vh);
+  }
+
+  /* CTA copy + email row — both pulled toward center with 280px between them.
+     Email vertically centers against the copy block so it sits opposite the
+     midpoint of the (H2 + body) stack rather than pinned to the top of it. */
+  .cta-content {
+    max-width: 1440px;
+    margin-left: auto;
+    margin-right: auto;
     display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    gap: var(--gutter);
+    justify-content: center;
+    align-items: center;
+    gap: 280px;
   }
 
   .cta-copy {
@@ -76,26 +100,39 @@
 
   .cta-h2 {
     font-family: var(--font-display);
-    font-weight: 500;
-    font-size: clamp(26px, 2.4vw, 40px);
+    /* Cofo Sans Regular — variable axis 400. */
+    font-weight: 400;
+    font-size: 48px;
     line-height: 1.08;
     letter-spacing: -0.02em;
-    margin: 0;
+    margin: 0 0 32px 0;
+    color: var(--fg);
   }
 
   .cta-body {
-    margin: clamp(14px, 1.4vw, 22px) 0 0 0;
-    font-family: var(--font-body);
-    font-size: clamp(14px, 0.95vw, 16px);
-    line-height: 1.5;
-    color: color-mix(in oklab, var(--fg) 78%, transparent);
-    max-width: 420px;
+    margin: 0;
+    font-family: var(--font-mono);
+    font-weight: 400;
+    font-size: 18px;
+    line-height: 1.7;
+    letter-spacing: -0.02em;
+    color: var(--fg);
+    /* Wide enough for the "Some projects need design. Others need alignment,"
+       line to fit at 18px mono — the hard <br> in the source is what
+       controls the break, but max-width still gates it. */
+    max-width: 560px;
   }
 
   .cta-email {
     color: var(--fg);
-    text-decoration: underline;
-    text-underline-offset: 4px;
+    /* border-bottom instead of text-decoration: underline — the scramble
+       splits the link's text into per-character inline-block spans, and
+       text-decoration doesn't cross into inline-block children (they
+       start their own decoration context and inherit "none"). A real
+       border on the anchor is drawn regardless of descendant boxes. */
+    text-decoration: none;
+    border-bottom: 1px solid currentColor;
+    padding-bottom: 4px;
     font-family: var(--font-mono);
     font-size: 13px;
     letter-spacing: 0.02em;
@@ -104,20 +141,68 @@
   }
   .cta-email:hover { opacity: 0.75; }
 
+  /* Footer wraps wordmark + meta row. No stacking context on the footer
+     itself — the wordmark needs to sit BEHIND the shader (z=2 on CTA) so
+     the concentric rings render over the type, while the meta row needs
+     to sit ABOVE it. Set z-index on each child individually. */
+  .site-footer {
+    position: static;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .section-cta .section-wordmark {
+    position: relative;
+    display: block;
+    /* Below the shader (z=2 on CTA via data-shader-blend="screen") so the
+       screen blend can light up the ink wordmark through the concentric
+       rings. Above the global background so we don't punch through to it. */
+    z-index: 1;
+    font-family: var(--font-display);
+    font-weight: 700;
+    /* clamp() sets the preferred visual scale; min() caps by measured glyph
+       ratio so 9 chars fit inside 100vw regardless of preferred size. */
+    font-size: min(clamp(15vw, 22vw, 28vw), calc(100vw / 6.5));
+    line-height: 0.9;
+    letter-spacing: -0.055em;
+    color: var(--color-ink);
+    text-align: center;
+    white-space: nowrap;
+    user-select: none;
+    margin: 0;
+  }
+
+  .footer-meta {
+    /* Above the shader so the meta text stays readable regardless of the
+       shader's current color under it. Padding-top for wordmark→meta gap
+       is set in global.css. */
+    position: relative;
+    z-index: 3;
+  }
+
+  @media (max-width: 1024px) {
+    .cta-content { gap: clamp(40px, 8vw, 280px); }
+  }
+
   @media (max-width: 900px) {
-    .section-cta > .section-content {
+    .cta-content {
       flex-direction: column;
       align-items: flex-start;
-      gap: 16px;
+      gap: 32px;
+      justify-content: flex-start;
     }
   }
 
   @media (max-width: 768px) {
-    /* Force the wordmark to fit portrait viewports. 100vw/5.5 caps by
-       average glyph width so 9 chars (WORK_DSGN) fit without horizontal
-       clip even when the fallback font is slightly wider than Cofo Sans. */
-    .section-cta > .section-wordmark {
-      font-size: min(22vw, calc(100vw / 6));
+    /* Force the wordmark to fit portrait viewports. 100vw / 5.2 caps by
+       average glyph width so 9 chars fit without horizontal clip on the
+       Cofo Sans Variable file (which is narrower than the previous
+       Inter Tight fallback — that's why the old min() with divisor 6 was
+       leaving the N clipped when Inter loaded first). */
+    .section-cta .section-wordmark {
+      /* Same divisor as base — mobile just tightens letter-spacing to buy a
+         couple more pixels of breathing room. */
+      font-size: min(22vw, calc(100vw / 6.5));
       letter-spacing: -0.04em;
     }
   }

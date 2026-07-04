@@ -8,7 +8,7 @@
 const OPACITY_BY_SECTION = { hero: 1.0, services: 0.0, cta: 0.8 };
 
 const BG_COLORS = {
-  hero:     [0x09, 0x09, 0x09],
+  hero:     [0x12, 0x11, 0x0F],
   services: [0xF4, 0xEC, 0xD5],
   cta:      [0xF4, 0xEC, 0xD5]
 };
@@ -94,14 +94,22 @@ function update() {
     p.cta * OPACITY_BY_SECTION.cta;
   document.documentElement.style.setProperty('--shader-opacity', shaderOpacity.toFixed(3));
 
-  const total = p.hero + p.services + p.cta || 1;
-  const nh = p.hero / total;
-  const ns = p.services / total;
-  const nc = p.cta / total;
-  const r = BG_COLORS.hero[0] * nh + BG_COLORS.services[0] * ns + BG_COLORS.cta[0] * nc;
-  const g = BG_COLORS.hero[1] * nh + BG_COLORS.services[1] * ns + BG_COLORS.cta[1] * nc;
-  const b = BG_COLORS.hero[2] * nh + BG_COLORS.services[2] * ns + BG_COLORS.cta[2] * nc;
-  document.documentElement.style.setProperty('--bg', toHex(r, g, b));
+  // Only re-blend the bg color when at least one section has meaningful
+  // presence. In the engineered zero-shader window between services and cta
+  // (needed for the blend-mode snap) all three presences fall to ~0; dividing
+  // by that would blend all three colors at weight 0 and snap the bg to pure
+  // black. Instead, hold the last-set bg through the dead zone — the shader
+  // is invisible anyway, so nobody sees the flash.
+  const total = p.hero + p.services + p.cta;
+  if (total > 0.02) {
+    const nh = p.hero / total;
+    const ns = p.services / total;
+    const nc = p.cta / total;
+    const r = BG_COLORS.hero[0] * nh + BG_COLORS.services[0] * ns + BG_COLORS.cta[0] * nc;
+    const g = BG_COLORS.hero[1] * nh + BG_COLORS.services[1] * ns + BG_COLORS.cta[1] * nc;
+    const b = BG_COLORS.hero[2] * nh + BG_COLORS.services[2] * ns + BG_COLORS.cta[2] * nc;
+    document.documentElement.style.setProperty('--bg', toHex(r, g, b));
+  }
 
   const dominant =
     p.hero >= p.services && p.hero >= p.cta ? 'hero'

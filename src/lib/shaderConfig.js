@@ -43,7 +43,7 @@ export const shaderPresets = {
   },
   ambient: AMBIENT,
   // Hero override — ambient was tuned against pure black without hard-light.
-  // On #090909 + hard-light the base peaks blow out; dim bright, cut chrom,
+  // On #12110F + hard-light the base peaks blow out; dim bright, cut chrom,
   // push fringe to the edges, and add a bit more grain texture.
   // Hero-specific — full overwrite (not a spread) per latest tuning pass.
   // Coarser grain particles (gscale 450) for a real sand/cymatics feel.

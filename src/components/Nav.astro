@@ -4,9 +4,9 @@
 // crossfade (900ms) so nothing snaps out of sync.
 ---
 <nav class="nav" aria-label="Primary">
-  <a class="nav-brand" href="/">WORK_DSGN</a>
+  <a class="nav-brand nav-wordmark" href="/" data-scramble>WORK_DSGN</a>
   <div class="nav-right">
-    <a class="nav-cta" href="mailto:studio@workdsgn.com">Start a project</a>
+    <a class="nav-cta project-button" href="mailto:studio@workdsgn.com" data-scramble data-scramble-lock-width>START A PROJECT</a>
   </div>
 </nav>
 
@@ -29,9 +29,8 @@
   .nav .nav-right > * { pointer-events: auto; }
 
   .nav-brand {
-    /* Cofo Sans Medium — softer/less technical than the mono treatment
-       used for the smaller labels. */
-    font-family: "cofo-sans", "Inter Tight", system-ui, sans-serif;
+    /* Cofo Sans Variable — medium weight for the wordmark. */
+    font-family: var(--font-display);
     font-weight: 500;
     font-size: 14px;
     letter-spacing: 0.02em;
@@ -66,10 +65,13 @@
     display: inline-block;
     padding: 11px 20px;
     border-radius: 999px;
+    /* On the dark hero the pill is cream on ink; on cream sections the swap
+       comes for free from the --fg / --bg dominance flip. */
     background: var(--fg);
     color: var(--bg);
     text-decoration: none;
-    font-family: var(--font-mono);
+    font-family: var(--font-display);
+    font-weight: 500;
     font-size: 11px;
     letter-spacing: 0.14em;
     text-transform: uppercase;

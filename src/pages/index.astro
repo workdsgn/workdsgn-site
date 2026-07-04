@@ -48,9 +48,18 @@ import '../styles/global.css';
       import { initScrollDriver } from '../lib/scrollDriver.js';
       import { initContentReveal } from '../lib/contentReveal.js';
       import { initCrosshair } from '../lib/crosshair.js';
+      import { initScramble } from '../lib/textScramble.js';
       initScrollDriver();
       initContentReveal();
       initCrosshair();
+      // Wait for webfonts before wiring scramble — replacing innerHTML mid-swap
+      // between fallback and real font shifts the metric and the resolve looks
+      // like a reflow, not a settle.
+      if (document.fonts?.ready) {
+        document.fonts.ready.then(() => initScramble());
+      } else {
+        initScramble();
+      }
     </script>
   </body>
 </html>

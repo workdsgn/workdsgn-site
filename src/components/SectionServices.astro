@@ -35,13 +35,13 @@ const services = [
 <section class="section section-services">
   <div class="section-content">
     <div class="services-inner">
-      <p class="services-label">SERVICES</p>
+      <p class="services-label" data-scramble>SERVICES</p>
       <ol class="services-list">
         {services.map((s, i) => (
           <li class="service-row fade-in" style={`transition-delay: ${i * 80}ms`}>
             <span class="idx">{s.n}</span>
-            <h3 class="name">{s.name}</h3>
-            <p class="desc">{s.desc}</p>
+            <h3 class="name" data-scramble>{s.name}</h3>
+            <p class="desc" data-scramble>{s.desc}</p>
           </li>
         ))}
       </ol>
@@ -53,7 +53,8 @@ const services = [
   .section-services {
     position: relative;
     min-height: 100vh;
-    min-height: 100svh;
+    min-height: 100dvh;
+    height: auto;
     color: var(--fg);
   }
 
@@ -61,8 +62,10 @@ const services = [
     position: relative;
     z-index: 2;
     min-height: 100vh;
-    min-height: 100svh;
-    padding: clamp(120px, 15vh, 200px) var(--gutter) clamp(80px, 12vh, 160px);
+    min-height: 100dvh;
+    /* Extra breathing room between the last service row and the CTA copy —
+       the two sections read as separate movements, not a continuous list. */
+    padding: clamp(120px, 15vh, 200px) var(--gutter) clamp(240px, 32vh, 400px);
   }
 
   .services-inner {
@@ -90,17 +93,44 @@ const services = [
     margin: 0;
   }
 
-  .service-row {
+  .services-list .service-row {
     display: grid;
     grid-template-columns: repeat(12, 1fr);
     gap: clamp(16px, 2vw, 32px);
-    padding: clamp(22px, 2.6vh, 34px) 0;
+    /* Horizontal padding on the row itself so the hover fill spans edge-to-edge
+       of the section-content, not just wraps the text. Vertical padding bumped
+       so title + desc read as centered inside a comfortable block, not stacked
+       tight against the row border. */
+    padding: clamp(28px, 3.4vh, 44px) clamp(16px, 2vw, 32px);
+    margin: 0 calc(-1 * clamp(16px, 2vw, 32px));
     border-top: 1px solid color-mix(in oklab, var(--fg) 22%, transparent);
-    align-items: baseline;
+    /* Vertical-center all three cells (idx, name, desc) so multi-line
+       descriptions still align to the visual center of the row rather than
+       hanging off the title's baseline. */
+    align-items: center;
+    cursor: pointer;
+    color: var(--fg);
+    background: transparent;
+    /* Bumped specificity over .fade-in (single class) so its opacity/transform
+       transition doesn't override our background/color transition on the same
+       element. */
+    transition:
+      background 300ms ease,
+      color 300ms ease,
+      opacity 800ms cubic-bezier(0.16, 1, 0.3, 1),
+      transform 800ms cubic-bezier(0.16, 1, 0.3, 1);
   }
-  .service-row:last-child {
+  .services-list .service-row:last-child {
     border-bottom: 1px solid color-mix(in oklab, var(--fg) 22%, transparent);
   }
+
+  /* Hover: row fills ink; every descendant inherits so the text reads as
+     cream-bg cut into the dark fill (negative-space effect). */
+  .services-list .service-row:hover {
+    background: var(--color-ink);
+    color: var(--color-cream-bg);
+  }
+  .services-list .service-row:hover * { color: inherit; }
 
   .idx {
     grid-column: 3 / span 1;
@@ -108,7 +138,6 @@ const services = [
     font-size: 13px;
     letter-spacing: 0.08em;
     opacity: 0.7;
-    align-self: baseline;
   }
 
   .name {
@@ -123,9 +152,11 @@ const services = [
 
   .desc {
     grid-column: 8 / span 5;
-    font-family: var(--font-body);
-    font-size: clamp(13px, 0.9vw, 15px);
-    line-height: 1.5;
+    font-family: var(--font-mono);
+    font-weight: 400;
+    font-size: 15px;
+    line-height: 1.6;
+    letter-spacing: -0.01em;
     color: color-mix(in oklab, var(--fg) 78%, transparent);
     margin: 0;
     max-width: 420px;

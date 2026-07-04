@@ -1,14 +1,22 @@
 :root {
+  /* Palette */
+  --color-cream: #C5BEAC;
+  --color-cream-bg: #F4ECD5;
+  --color-ink: #12110F;
+
   /* Defaults — hero-ish. scrollDriver overrides via [data-dominant]. */
-  --bg: #090909;
-  --fg: #f4f2ec;
+  --bg: var(--color-ink);
+  --fg: var(--color-cream);
   --shader-blend: hard-light;
   --shader-opacity: 1;
   --shader-z: 1;
 
-  --font-display: "cofo-sans", "Inter Tight", system-ui, sans-serif;
-  --font-body: "cofo-sans", "Inter Tight", system-ui, sans-serif;
-  --font-mono: "cofo-mono", ui-monospace, "SF Mono", Menlo, monospace;
+  /* Adobe kit yxy6qpv variable font family names — the non-variable slugs
+     ("cofo-sans", "cofo-mono") don't exist in this kit and silently fell
+     back to Inter Tight before. */
+  --font-display: "cofo-sans-variable", "Inter Tight", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-body: "cofo-sans-mono-variable", ui-monospace, "SF Mono", Menlo, monospace;
+  --font-mono: "cofo-sans-mono-variable", ui-monospace, "SF Mono", Menlo, monospace;
 
   --unit: 8px;
   --gutter: clamp(24px, 4vw, 64px);
@@ -19,13 +27,13 @@
    not a compositing operation. --bg is set inline every rAF tick by
    scrollDriver; the values here act as an SSR/no-JS fallback. */
 :root[data-dominant="hero"] {
-  --bg: #090909;
-  --fg: #f4f2ec;
+  --bg: var(--color-ink);
+  --fg: var(--color-cream);
 }
 :root[data-dominant="services"],
 :root[data-dominant="cta"] {
-  --bg: #F4ECD5;
-  --fg: #090909;
+  --bg: var(--color-cream-bg);
+  --fg: var(--color-ink);
 }
 
 /* Shader blend + z snap on shader visibility, not dominance. The scroll
@@ -45,8 +53,21 @@ html, body {
   padding: 0;
   color: var(--fg);
   font-family: var(--font-body);
+  height: auto;
   min-height: 100%;
   overflow-x: hidden;
+  overflow-y: auto;
+  /* Explicit — nothing should trap scroll on iOS Safari when the URL bar
+     collapses/expands, and no snap-container should hijack section-to-section
+     scrolling. Native browsing feel. */
+  overscroll-behavior: auto;
+  touch-action: auto;
+  scroll-behavior: auto;
+}
+
+main {
+  /* Intentionally no scroll-snap-type here — snap fights native scroll on
+     both trackpad and touch. */
 }
 
 * { box-sizing: border-box; }
@@ -59,7 +80,7 @@ html, body {
   position: fixed;
   inset: 0;
   z-index: 0;
-  background: var(--bg, #090909);
+  background: var(--bg, #12110F);
   pointer-events: none;
 }
 
@@ -94,7 +115,7 @@ a, button, [role="button"], input, textarea, select { cursor: none; }
   transform: translate(-50%, -50%);
   will-change: transform;
   mix-blend-mode: difference;
-  color: #ffffff;
+  color: var(--color-cream);
   opacity: 0;
   transition: opacity 300ms;
 }
@@ -110,9 +131,9 @@ a, button, [role="button"], input, textarea, select { cursor: none; }
   padding-right: 3px;
   padding-top: 1px;
   pointer-events: none;
-  font-family: "cofo-mono", ui-monospace, "SF Mono", Menlo, monospace;
+  font-family: var(--font-mono);
   font-size: 8px;
-  color: #ffffff;
+  color: var(--color-cream);
   mix-blend-mode: difference;
   letter-spacing: 0.02em;
   line-height: 1.1;
@@ -150,4 +171,70 @@ a, button, [role="button"], input, textarea, select { cursor: none; }
   html { cursor: auto; }
   a, button, [role="button"], input, textarea, select { cursor: auto; }
   .crosshair, .coords, .gauntlet-cursor { display: none; }
+}
+
+/* ────────────────────────────────────────────────────────────────
+   Typography — shared rules. Sections layer their own sizes on top. */
+
+.body-copy {
+  font-family: var(--font-mono);
+  font-weight: 400;
+  font-size: 21px;
+  line-height: 1.8;
+  letter-spacing: -0.02em;
+}
+
+/* Per-character scramble slots (see src/lib/textScramble.js). Each letter
+   inside a [data-scramble] element gets its own inline-block span so
+   mouseenter hit-testing lands on the actual glyph. Chars are grouped
+   into per-word nowrap containers so line-breaks only happen at spaces
+   between words, not between the atomic char spans within one word.
+   During a scramble the glyph dims slightly so the "settle" back to the
+   original char reads as a resolve, not a jump. */
+.scramble-word {
+  display: inline-block;
+  white-space: nowrap;
+}
+.scramble-char {
+  display: inline-block;
+}
+.scramble-char[data-scrambling="1"] { opacity: 0.7; }
+
+/* ────────────────────────────────────────────────────────────────
+   Footer — wordmark + meta row. NOT a stacking context here; the CTA
+   component pins wordmark below the shader and meta above it via
+   per-element z-index. */
+
+.site-footer {
+  padding: 0;
+  color: var(--color-ink);
+}
+
+.footer-meta {
+  display: grid;
+  /* Four equal cells — NY clock · © · Studio location · Servicing note.
+     Everything sits on one horizontal line at desktop; stacks on mobile. */
+  grid-template-columns: repeat(4, 1fr);
+  align-items: start;
+  padding: clamp(80px, 10vh, 160px) clamp(24px, 4vw, 64px) 32px;
+  gap: clamp(16px, 2vw, 32px);
+  font-family: var(--font-mono);
+  font-weight: 400;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  color: var(--color-ink);
+  text-transform: uppercase;
+}
+
+.footer-meta-cell { text-align: left; }
+/* Only the trailing cell right-aligns so the row visually terminates at
+   the viewport edge rather than dangling in the middle. */
+.footer-meta-cell--right { text-align: right; }
+
+@media (max-width: 768px) {
+  .footer-meta {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .footer-meta-cell--right { text-align: left; }
 }

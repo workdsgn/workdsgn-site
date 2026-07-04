@@ -1,17 +1,11 @@
 ---
-import AnimatedText from './AnimatedText.astro';
 ---
 <section class="section section-hero">
   <div class="section-content">
     <div class="hero-inner">
       <div class="hero-copy">
-        <AnimatedText as="h1" variant="heading" class="hero-h1">
-          For organizations building what doesn't exist yet.
-        </AnimatedText>
-        <AnimatedText as="p" variant="body" class="hero-body" delay={600}>
-          WORK is the design and operating partner for founders and executive
-          teams turning ambitious ideas into working reality.
-        </AnimatedText>
+        <h1 class="hero-h1">For organizations building what doesn't exist yet.</h1>
+        <p class="hero-body" data-scramble>WORK is the design and operating partner for founders and executive teams turning ambitious ideas into working reality.</p>
       </div>
     </div>
   </div>
@@ -20,8 +14,11 @@ import AnimatedText from './AnimatedText.astro';
 <style is:global>
   .section-hero {
     position: relative;
+    /* dvh accounts for iOS Safari URL bar collapse. `height: auto` (not fixed)
+       so the section never exceeds the visible area — see the CTA fix. */
     min-height: 100vh;
-    min-height: 100svh;
+    min-height: 100dvh;
+    height: auto;
     color: var(--fg);
   }
 
@@ -29,7 +26,7 @@ import AnimatedText from './AnimatedText.astro';
     position: relative;
     z-index: 2;
     min-height: 100vh;
-    min-height: 100svh;
+    min-height: 100dvh;
     padding: clamp(120px, 15vh, 200px) var(--gutter) clamp(80px, 12vh, 160px);
     display: grid;
     align-items: center;
@@ -51,20 +48,38 @@ import AnimatedText from './AnimatedText.astro';
 
   .hero-h1 {
     font-family: var(--font-display);
-    font-weight: 500;
-    font-size: clamp(30px, 3.2vw, 52px);
-    line-height: 1.06;
+    /* Cofo Sans Light — variable axis 300. */
+    font-weight: 300;
+    font-size: 64px;
+    line-height: 1.08;
     letter-spacing: -0.02em;
     text-wrap: balance;
+    color: var(--color-cream);
+    margin-bottom: 40px;
   }
 
   .hero-body {
     margin-top: clamp(24px, 3vh, 40px);
     max-width: 460px;
-    font-family: var(--font-body);
-    font-size: clamp(14px, 0.95vw, 16px);
-    line-height: 1.5;
-    color: color-mix(in oklab, var(--fg) 78%, transparent);
+    font-family: var(--font-mono);
+    font-weight: 400;
+    font-size: 21px;
+    line-height: 1.8;
+    letter-spacing: -0.02em;
+    color: var(--color-cream);
+  }
+
+  /* 1440+ desktop: widen the hero column so "For organizations" fits on the
+     first line. At 72px display, that phrase measures ~640px — bump the
+     copy well past that so wrapping stays natural. */
+  @media (min-width: 1440px) {
+    .hero-copy {
+      grid-column: 6 / -1;
+      max-width: 780px;
+    }
+    .hero-body {
+      max-width: 620px;
+    }
   }
 
   @media (max-width: 900px) {
