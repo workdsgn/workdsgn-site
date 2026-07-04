@@ -12,7 +12,7 @@
     <div class="section-wordmark footer-wordmark" aria-hidden="true">WORK_DSGN</div>
     <div class="footer-meta">
       <div class="footer-meta-cell">
-        <span id="ny-clock" data-scramble>EST / MIA LOADING...</span>
+        <span id="ny-clock" data-scramble>ET / MIA LOADING...</span>
       </div>
       <div class="footer-meta-cell" data-scramble>© 2026 WORK DESIGN LLC</div>
       <div class="footer-meta-cell" data-scramble>STUDIO BASED IN CENTRAL FLORIDA</div>
@@ -45,7 +45,7 @@
     const second = parts.find(p => p.type === 'second').value;
     const el = document.getElementById('ny-clock');
     if (!el) return;
-    const text = `EST / MIA ${day} ${hour}:${minute}:${second}`;
+    const text = `ET / MIA ${day} ${hour}:${minute}:${second}`;
     if (el.dataset.scrambleReady === '1') {
       renderScrambleText(el, text);
     } else {
@@ -102,10 +102,11 @@
     font-family: var(--font-display);
     /* Cofo Sans Regular — variable axis 400. */
     font-weight: 400;
-    font-size: 48px;
+    /* 48px cap → 30px on 375px. Preferred hits 48px at ~1200px. */
+    font-size: clamp(30px, 4vw, 48px);
     line-height: 1.08;
     letter-spacing: -0.02em;
-    margin: 0 0 32px 0;
+    margin: 0 0 clamp(20px, 2.4vw, 32px) 0;
     color: var(--fg);
   }
 
@@ -113,7 +114,8 @@
     margin: 0;
     font-family: var(--font-mono);
     font-weight: 400;
-    font-size: 18px;
+    /* 18px desktop → 13px mobile. Preferred hits 18px at ~1200px. */
+    font-size: clamp(13px, 1.5vw, 18px);
     line-height: 1.7;
     letter-spacing: -0.02em;
     color: var(--fg);

@@ -50,21 +50,26 @@
     font-family: var(--font-display);
     /* Cofo Sans Light — variable axis 300. */
     font-weight: 300;
-    font-size: 64px;
+    /* 64px at desktop cap; clamps down to ~40px on 375px viewport so the
+       hero H1 doesn't consume the entire mobile screen. Preferred vw
+       target reaches 64px at ~1067px viewport width. */
+    font-size: clamp(40px, 6vw, 64px);
     line-height: 1.08;
     letter-spacing: -0.02em;
     text-wrap: balance;
     color: var(--color-cream);
-    margin-bottom: 40px;
+    margin-bottom: clamp(24px, 3vw, 40px);
   }
 
   .hero-body {
-    margin-top: clamp(24px, 3vh, 40px);
+    margin-top: clamp(20px, 3vh, 40px);
     max-width: 460px;
     font-family: var(--font-mono);
     font-weight: 400;
-    font-size: 21px;
-    line-height: 1.8;
+    /* 21px desktop → 14px mobile. Mono line-height stays a bit tighter on
+       mobile since narrower measure means shorter lines feel less airy. */
+    font-size: clamp(14px, 1.8vw, 21px);
+    line-height: 1.7;
     letter-spacing: -0.02em;
     color: var(--color-cream);
   }
