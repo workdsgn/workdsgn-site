@@ -17,6 +17,7 @@ import '../styles/global.css';
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="preload" as="image" href="/gauntlet-cursor.png" />
+    <link rel="icon" id="favicon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="stylesheet" href="https://use.typekit.net/yxy6qpv.css" />
     <link
       rel="stylesheet"
@@ -49,9 +50,11 @@ import '../styles/global.css';
       import { initContentReveal } from '../lib/contentReveal.js';
       import { initCrosshair } from '../lib/crosshair.js';
       import { initScramble } from '../lib/textScramble.js';
+      import { startAnimatedFavicon } from '../lib/animatedFavicon.js';
       initScrollDriver();
       initContentReveal();
       initCrosshair();
+      startAnimatedFavicon();
       // Wait for webfonts before wiring scramble — replacing innerHTML mid-swap
       // between fallback and real font shifts the metric and the resolve looks
       // like a reflow, not a settle.
