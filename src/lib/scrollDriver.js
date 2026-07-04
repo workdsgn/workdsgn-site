@@ -14,13 +14,15 @@ const BG_COLORS = {
 };
 
 // Half-width of the boundary blend zone (as a fraction of viewport height).
-// Wider than the earlier 0.3 so color drift feels like a gradient rather
-// than a snap.
-const BLEND_HALF = 0.7;
+// 0.5 keeps color/opacity drift smooth without making section handoffs feel
+// syrupy on mobile — the previous 0.7 spanned so much scroll range on short
+// viewports that leaving a section required a long finger stroke.
+const BLEND_HALF = 0.5;
 
 let scrollY = 0;
 let ticking = false;
 let lastDominant = null;
+let lastDocHeight = 0;
 
 const sections = [
   { name: 'hero',     el: null, start: 0, end: 0 },
@@ -74,6 +76,16 @@ function getPresence() {
 }
 
 function update() {
+  // Mobile browsers change viewport size when the URL bar shows/hides.
+  // That resizes our svh-based sections and shifts offsetTop values, but
+  // no `resize` event fires. Cheap check: if body height changed since
+  // last tick, refresh boundaries so presence math stays accurate.
+  const currentDocHeight = document.body.offsetHeight;
+  if (currentDocHeight !== lastDocHeight) {
+    computeBoundaries();
+    lastDocHeight = currentDocHeight;
+  }
+
   const p = getPresence();
 
   const shaderOpacity =

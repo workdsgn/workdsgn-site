@@ -24,7 +24,7 @@
        trapped mobile scroll at the bottom because 100vh > the visible area
        once the URL bar hid. */
     min-height: 100vh;
-    min-height: 100dvh;
+    min-height: 100svh;
     height: auto;
     color: var(--fg);
     display: flex;
@@ -42,7 +42,11 @@
     z-index: 1;
     font-family: var(--font-display);
     font-weight: 700;
-    font-size: clamp(15vw, 22vw, 28vw);
+    /* min() cap prevents "WORK_DSGN" (9 chars) from overflowing viewport
+       width. Divisor 6 accommodates the Inter Tight fallback (wider glyphs
+       than Cofo Sans Bold) — the 22vw preferred only wins on ultra-narrow
+       viewports; normally 100vw/6 dominates so the wordmark fits every width. */
+    font-size: min(clamp(15vw, 22vw, 28vw), calc(100vw / 6));
     line-height: 0.9;
     letter-spacing: -0.03em;
     color: #090909;
